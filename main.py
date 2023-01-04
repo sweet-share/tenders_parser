@@ -3,7 +3,10 @@ import datetime as dt
 import tkinter as tk
 import country_converter as coco
 import pandas as pd
+
 from selenium import webdriver
+from fake_useragent import UserAgent
+
 from auxiliary_functions import convert_rates, convert_to_excel, translation, prediction, launch_elastic
 
 from parsers.parse_TED_Europa import ted_europa
@@ -29,8 +32,8 @@ class App(tk.Tk):
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--no-sandbox')
         options.add_argument('--ignore-certificate-errors')
-        options.add_argument("--disable-extensions")
-        options.add_argument('--user-agent="Chrome/102.0.5005.63 Mobile Safari/537.36 ')
+        ua = UserAgent()
+        options.add_argument(f'--user-agent={ua["google chrome"]}')
         options.add_experimental_option("useAutomationExtension", False)
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         browser = webdriver.Chrome(executable_path='chromedriver.exe', options=options)

@@ -80,16 +80,8 @@ def prediction(df):
     with open("logreg_model.pkl", 'rb') as file:
         clf, tfidf = pickle.load(file)
 
-    df['Переведенный текст_тех'] = df['Переведенный текст'].str.replace(r"http\S+", "", regex=True)
-    df['Переведенный текст_тех'] = df['Переведенный текст'].str.replace(r"http", "", regex=True)
-    df['Переведенный текст_тех'] = df['Переведенный текст'].str.replace(r"@\S+", "", regex=True)
-    df['Переведенный текст_тех'] = df['Переведенный текст'].str.replace(r"[^A-Za-z0-9(),!?@\'\`\"\_\n]", " ",
-                                                                    regex=True)
-    df['Переведенный текст_тех'] = df['Переведенный текст'].str.replace(r"@", "at", regex=True)
-    df['Переведенный текст_тех'] = df['Переведенный текст'].str.replace(r",", "", regex=True)
-    df['Переведенный текст_тех'] = df['Переведенный текст'].str.replace(r"'", "", regex=True)
-    df['Переведенный текст_тех'] = df['Переведенный текст'].str.lower()
-    df['Переведенный текст_тех'] = df['Переведенный текст'].str.replace(r"_x000d_\S+", "", regex=True)
+    df['Переведенный текст_тех'] = df['Переведенный текст'].str.replace(r"[^\w\s]|[\d]+|(https|http)\S+|_x000d\S+", "",
+                                                                        regex=True)
     df['Переведенный текст_тех'] = df['Переведенный текст'].dropna()
 
     df['Отношение к атомной отрасли'] = clf.predict(tfidf.transform(df['Переведенный текст_тех']).toarray())
