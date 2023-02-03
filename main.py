@@ -46,8 +46,9 @@ class App(tk.Tk):
             proxies_logpass = proxies.pop(0)
 
         # launching parser scripts
-        df = pd.DataFrame(columns=['ID', 'Наменование закупки', 'Ссылка', 'Страна', 'Заказчик', 'Категория',
-                                   'Дата размещения', 'Краткое описание', 'Цена', 'Валюта'])
+        df = pd.DataFrame(columns=['ID', 'Procurement name', 'Link', 'Country', 'Client', 'Category',
+                                   'Publication date', 'Short description', 'Value (national currency)',
+                                   'National currency'])
 
         df = pd.concat([df, ted_europa(keywords, start_date, end_date, customers, df.columns, browser, proxies,
                                        proxies_logpass)])
@@ -57,14 +58,14 @@ class App(tk.Tk):
         browser.close()
 
         # process gathered data
-        df['Страна'] = coco.convert(names=df['Страна'], to='name_short')
-        df['Дата размещения'] = pd.to_datetime(df['Дата размещения'], infer_datetime_format=True).dt.date.fillna(0)
-        df['Цена в долларах'] = pd.to_numeric(convert_rates(df), downcast="float")
-        df['Переведенный текст'] = translation(df, proxies, proxies_logpass)
-        df['Отношение к атомной отрасли'] = prediction(df)
-        df = df.drop_duplicates(subset=['Краткое описание', 'Заказчик']).drop(columns=['Курс обмена'], axis=1) \
-            .drop(columns=['Переведенный текст_тех'], axis=1)
-        df = df[df['Отношение к атомной отрасли'] == 1]
+        df['Country'] = coco.convert(names=df['Country'], to='name_short')
+        df['Publication date'] = pd.to_datetime(df['Publication date'], infer_datetime_format=True).dt.date.fillna(0)
+        df['Value (USD)'] = pd.to_numeric(convert_rates(df), downcast="float")
+        df['Translated text'] = translation(df, proxies, proxies_logpass)
+        df['Relation to nuclear sphere'] = prediction(df)
+        df = df.drop_duplicates(subset=['Short description', 'Client']).drop(columns=['Exchange rate'], axis=1) \
+            .drop(columns=['Translated text_temp'], axis=1)
+        df = df[df['Relation to nuclear sphere'] == 1]
 
         convert_to_excel(df)  # write results into Excel
         launch_elastic(df, keywords)  # write results into elasticsearch DB

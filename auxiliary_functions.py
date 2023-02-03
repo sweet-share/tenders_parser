@@ -20,19 +20,19 @@ def create_index(df, keywords):
         yield {
             '_index': keywords,
             '_id': f"{df_doc['ID']}",
-            '_source': {key: df_doc[key] for key in ['ID', 'Наменование закупки', 'Ссылка', 'Страна', 'Заказчик',
-                                                     'Категория', 'Дата размещения', 'Переведенный текст', 'Цена',
-                                                     'Цена в долларах', 'Валюта']},
-        }
+            '_source': {key: df_doc[key] for key in
+                        ['ID', 'Procurement name', 'Link', 'Country', 'Client', 'Category',
+                         'Publication date', 'Translated text', 'Value (national currency)',
+                         'Value (USD)', 'National currency']}}
 
 
 # converting currencies to USD
 def convert_rates(df):
     response = ((requests.get('https://v6.exchangerate-api.com/v6/c8024224ef1299d11dbe2400/latest/USD')).json())[
         "conversion_rates"]
-    df['Курс обмена'] = df['Валюта'].apply(lambda x: response.get(x))
-    df['Цена в долларах'] = (df['Цена'] / df['Курс обмена']).fillna(0)
-    return df['Цена в долларах']
+    df['Exchange rate'] = df['Валюта'].apply(lambda x: response.get(x))
+    df['Value (USD)'] = (df['Value (national currency)'] / df['Exchange rate']).fillna(0)
+    return df['Value (USD)']
 
 
 # text translation into English
@@ -43,7 +43,7 @@ def translation(df, proxies, proxies_logpass):
              "http": f"http://{proxies_logpass}@{proxies[proxy_index]}"}
     print(proxy)
     translator = google_trans_new.google_translator(proxies=proxy)
-    for text in df['Краткое описание'].fillna('No description'):
+    for text in df['Short description'].fillna('No description'):
         try:
             text.replace('©', '').lower().encode('ascii')
             translated.append(text)
@@ -52,7 +52,7 @@ def translation(df, proxies, proxies_logpass):
                 translated.append(translator.translate(text, lang_tgt='en'))
                 print(len(translated))
             except google_trans_new.google_trans_new.google_new_transError:
-                print('Смена прокси (таймаут)')
+                print('Changing proxies (timeout)')
                 if proxy_index != len(proxies):
                     proxy_index += 1
                 else:
@@ -63,7 +63,7 @@ def translation(df, proxies, proxies_logpass):
                 time.sleep(0.1)
                 translated.append(text)
             except TypeError:
-                print('Смена прокси (json)')
+                print('Changing proxies (json)')
                 if proxy_index != len(proxies):
                     proxy_index += 1
                 else:
@@ -80,21 +80,22 @@ def prediction(df):
     with open("logreg_model.pkl", 'rb') as file:
         clf, tfidf = pickle.load(file)
 
-    df['Переведенный текст_тех'] = df['Переведенный текст'].str.replace(r"[^\w\s]|[\d]+|(https|http)\S+|_x000d\S+", "",
-                                                                        regex=True)
-    df['Переведенный текст_тех'] = df['Переведенный текст'].dropna()
+    df['Translated text_temp'] = df['Translated text'].str.replace(r"[^\w\s]|[\d]+|(https|http)\S+|_x000d\S+", "",
+                                                                   regex=True)
+    df['Translated text_temp'] = df['Translated text'].dropna()
 
-    df['Отношение к атомной отрасли'] = clf.predict(tfidf.transform(df['Переведенный текст_тех']).toarray())
-    return df['Отношение к атомной отрасли']
+    df['Отношение к атомной отрасли'] = clf.predict(tfidf.transform(df['Translated text_temp']).toarray())
+    return df['Relation to nuclear sphere']
+
 
 # writing data into Excel table
 def convert_to_excel(df):
     writer = pd.ExcelWriter(f'Tenders.xlsx', engine='xlsxwriter')
-    df.to_excel(writer, sheet_name='Тендеры', index=False)
+    df.to_excel(writer, sheet_name='Tenders', index=False)
     workbook = writer.book
-    sheet = writer.sheets['Тендеры']
+    sheet = writer.sheets['Tenders']
     header_format = workbook.add_format({'text_wrap': True, 'valign': 'vcenter', 'align': 'center',
-                                              'fg_color': '#DEEBF7', 'border': 1, 'border_color': '#808080'})
+                                         'fg_color': '#DEEBF7', 'border': 1, 'border_color': '#808080'})
     format_link = workbook.add_format({'valign': 'vcenter', 'text_wrap': True, 'font_color': '#0563C1',
                                        'underline': True})
     format_wr = workbook.add_format({'valign': 'top', 'text_wrap': True})
