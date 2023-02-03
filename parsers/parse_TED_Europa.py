@@ -1,10 +1,13 @@
 # -*- coding: UTF-8 -*-
-import pandas as pd
-import requests
-import concurrent.futures
-from lxml.html import fromstring
-from random import randint
 import re
+from random import randint
+import concurrent.futures
+
+import requests
+import pandas as pd
+from lxml.html import fromstring
+
+
 
 session = requests.Session()
 session.headers = {'User-Agent': 'Chrome/102.0.5005.63 Mobile Safari/537.36'}
