@@ -10,12 +10,15 @@ session.headers = {'User-Agent': 'Chrome/102.0.5005.63 Mobile Safari/537.36'}
 
 
 def ebrd(keywords, start_date, end_date, columns, browser, proxies, proxies_logpass):
+
+    # open search page and input keywords
     browser.get('https://ecepp.ebrd.com/delta/noticeSearchResults.html')
     if start_date and end_date != '':
         browser.find_element_by_xpath("//input[@id='min-date']").send_keys(start_date.replace('.', '/'))
         browser.find_element_by_xpath("//input[@id='max-date']").send_keys((end_date.replace('.', '/')))
     browser.find_element_by_xpath("//*[@id='keyword']").send_keys(keywords)
 
+    # collect links for tenders pages
     urls = []
     while True:
         html_tree_ = fromstring(browser.page_source)
@@ -26,6 +29,7 @@ def ebrd(keywords, start_date, end_date, columns, browser, proxies, proxies_logp
         else:
             browser.find_element_by_xpath('//a[@class="paginate_button next"]').click()
 
+    # gather data from HTML pages of tenders
     def parse_data(url):
         link = 'https://ecepp.ebrd.com/delta/' + url
         index_proxy = randint(0, len(proxies) - 1)
@@ -47,6 +51,7 @@ def ebrd(keywords, start_date, end_date, columns, browser, proxies, proxies_logp
 
         return [index, name, link, country, agency, category, date, description, price, currency]
 
+    # launch multithreading (enhances the requests speed up to 10-15 times)
     if len(urls) > 0:
         with concurrent.futures.ThreadPoolExecutor(max_workers=min(10, (len(urls)+1))) as executor:
             gen = executor.map(parse_data, urls)

@@ -8,13 +8,13 @@ import time
 import pickle
 
 
-# подключение к БД elasticsearch
+# plugging to elastic search
 def launch_elastic(df, keywords):
     es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
     helpers.bulk(es, create_index(df, keywords))
 
 
-# создание индекса в elasticsearch и загрузка данных в него
+# creating elasticsearch index
 def create_index(df, keywords):
     for index, df_doc in df.iterrows():
         yield {
@@ -26,7 +26,7 @@ def create_index(df, keywords):
         }
 
 
-# приведение всех курсов валют к доллару
+# converting currencies to USD
 def convert_rates(df):
     response = ((requests.get('https://v6.exchangerate-api.com/v6/c8024224ef1299d11dbe2400/latest/USD')).json())[
         "conversion_rates"]
@@ -35,7 +35,7 @@ def convert_rates(df):
     return df['Цена в долларах']
 
 
-# перевод текстов на английский язык
+# text translation into English
 def translation(df, proxies, proxies_logpass):
     translated = []
     proxy_index = 0
@@ -87,7 +87,7 @@ def prediction(df):
     df['Отношение к атомной отрасли'] = clf.predict(tfidf.transform(df['Переведенный текст_тех']).toarray())
     return df['Отношение к атомной отрасли']
 
-# запись данных в таблицу excel
+# writing data into Excel table
 def convert_to_excel(df):
     writer = pd.ExcelWriter(f'Tenders.xlsx', engine='xlsxwriter')
     df.to_excel(writer, sheet_name='Тендеры', index=False)
