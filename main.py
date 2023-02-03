@@ -1,20 +1,21 @@
 # -*- coding: UTF-8 -*-
+import os
 import datetime as dt
 import tkinter as tk
-import country_converter as coco
-import pandas as pd
 
+import pandas as pd
 from selenium import webdriver
 from fake_useragent import UserAgent
+from webdriver_auto_update import check_driver
+import country_converter as coco
 
 from auxiliary_functions import convert_rates, convert_to_excel, translation, prediction, launch_elastic
-
 from parsers.parse_TED_Europa import ted_europa
 from parsers.parse_EBRD import ebrd
 from parsers.parse_sa_tenders import sa_tenders
 
 
-# launch UI class
+# UI class
 class App(tk.Tk):
     def on_push(self):
         # receiving keywords from user
@@ -25,6 +26,7 @@ class App(tk.Tk):
         customers = self.customers_entry.get()
 
         # launch browser
+        check_driver(f'{os.getcwd()}')
         options = webdriver.ChromeOptions()
         ua = UserAgent()
 
